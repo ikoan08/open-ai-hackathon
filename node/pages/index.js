@@ -99,7 +99,6 @@ export default function Home() {
         ))}
           <input type="submit" value="おすすめレシピを聞く" disabled={isLoading}/>
         </form>
-        <div className={styles.result}>{result}</div>
         <video
           src={voiceUrl}
           autoPlay
