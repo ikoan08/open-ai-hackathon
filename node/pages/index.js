@@ -3,12 +3,11 @@ import { useState } from "react";
 import styles from "./index.module.css";
 
 export default function Home() {
-  const [animalInput, setAnimalInput] = useState("");
   const [result, setResult] = useState();
   const [foods, setFoods] = useState([""]);
   const [tema, setTema] = useState(50);
+  const [voiceUrl, setVoiceUrl] = useState();
   const [isLoading, setIsLoading] = useState(false);
-
   async function onSubmit(event) {
     setIsLoading(true);
     event.preventDefault();
@@ -19,9 +18,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          inputText: payload
-        }),
+        body: JSON.stringify({ inputText: payload }),
       });
 
       const data = await response.json();
@@ -30,7 +27,27 @@ export default function Home() {
       }
 
       setResult(data.result);
-      setAnimalInput("");
+      setFoods([""]);
+
+      const startPosition = data.result.indexOf('レビュー:') + 5;
+      const voicevoxText = data.result.substr(startPosition)
+
+      const voicevoxResponse = await fetch("/api/voicevox", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ voicevoxText: voicevoxText }),
+      });
+
+      const voicevoxData = await voicevoxResponse.json();
+      if (voicevoxResponse.status !== 200) {
+        throw voicevoxData.error || new Error(`Request failed with status ${response.status}`);
+      }
+
+      setVoiceUrl(voicevoxData.voicevoxUrl)
+      document.getElementById("media").play();
+
     } catch(error) {
       // Consider implementing your own error handling logic here
       console.error(error);
@@ -82,6 +99,15 @@ export default function Home() {
         ))}
           <input type="submit" value="おすすめレシピを聞く" disabled={isLoading}/>
         </form>
+        <div className={styles.result}>{result}</div>
+        <video
+          src={voiceUrl}
+          autoPlay
+          playsInline
+          type="audio/x-wav"
+          name="media" 
+          id="media"
+        />
         {isLoading? <p>loading...</p> :<div className={styles.result}>{result}</div>}
       </main>
     </div>
